@@ -1,10 +1,176 @@
 <!DOCTYPE html>
 <html>
-<body>
 
-<h1>My First Heading</h1>
+<style>
 
-<p>My first paragraph.</p>
+	.emoji {
+		
+		padding: 0.5em;
+		font-size: 2em;
+		outline: none;
+		background: none;
+		border: none;
+		height: 2em;
+		width: 2em;
+	
+	}
+
+	#refresh {
+
+		font-size: 2em;
+		outline: none;
+		background: none;
+		border: none;
+		margin-bottom: 0.2em;
+
+	}
+
+	#buttonsDiv {
+
+		margin-bottom: 2em;
+
+	}
+
+	#prompt {
+
+		font-size: 1.1em;
+		margin-bottom: 0.2em;
+
+	}
+
+	#response{
+
+		font-size: 1.1em;
+		padding: 0.5em;
+		border: 1px solid black;
+
+	}
+
+	#mainDiv {
+
+		margin: auto;
+		width: 90%;
+		text-align: center;
+
+	}
+
+	span {
+
+		color: #006699;
+
+	}
+
+	.emojiBlock {
+		
+		display: inline-block;
+	
+	}
+
+	#currentAnswer {
+
+		height: 10em;
+
+	}
+
+	#infoBox {
+
+		width: 10em;
+		text-align: left;
+
+	}
+
+	body{width:100%; font-size: 3em;}
+	html{width:100%; font-size: 1em;}
+
+</style>
+
+<script type="text/javascript">
+
+	let laughNum;
+	let scareNum;
+	let upNum;
+	let downNum;
+	let answer;
+	let infoBox;
+
+	function init(){
+
+		infoBox = document.getElementById("infoBox");
+		answer = document.getElementById("currentAnswer");
+		laughNum = document.getElementById("laughNum");
+		scareNum = document.getElementById("scareNum");
+		upNum = document.getElementById("upNum");
+		downNum = document.getElementById("downNum");
+
+		getInfo();
+		getNextAns();
+
+	}
+
+	function getInfo(){
+
+		var xhttp = new XMLHttpRequest();
+		xhttp.onreadystatechange = function() {
+			if (this.status == 200) {
+
+				infoBox.innerHTML = this.responseText;
+
+			}
+		};
+		xhttp.open("GET", "/info", true);
+		xhttp.send();
+
+	}
+
+	function getNextAns(){
+
+		var xhttp = new XMLHttpRequest();
+		xhttp.onreadystatechange = function() {
+			if (this.status == 200) {
+
+				answer.innerHTML = this.responseText;
+				laughNum.innerHTML = 1;
+				scareNum.innerHTML = 1;
+				upNum.innerHTML = 1
+				downNum.innerHTML = 1
+
+			}
+		};
+		xhttp.open("GET", "/answer", true);
+		xhttp.send();
+
+	}
+
+</script>
+
+<body onload="init()">
+
+<div id="mainDiv">
+
+	<div id="infoBox"></div>
+	<div id="currentAnswer"></div>
+	<div id="voteDiv">
+		<div id="buttonsDiv">
+			<div class="emojiBlock">
+				<button class="emoji" id="laugh">&#x1F602;</button>
+				<div id="laughNum">0</div>
+			</div>
+			<div class="emojiBlock">
+				<button class="emoji" id="shocked">&#x1F628;</button>
+				<div id="scareNum">0</div>
+			</div>
+			<div class="emojiBlock">
+				<button class="emoji" id="agree">&#x1F44D;</button>
+				<div id="upNum">0</div>
+			</div>
+			<div class="emojiBlock">
+				<button class="emoji" id="disagree">&#x1F44E;</button>
+				<div id="downNum">0</div>
+			</div>
+		</div>
+	</div>
+
+</div>
 
 </body>
 </html>

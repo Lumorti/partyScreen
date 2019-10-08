@@ -16,12 +16,26 @@ responses = []
 fields = {}
 questionsPerIP = {}
 
+# Get the LAN IP
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+hostip = get_ip()
+
 # Set up the server
 listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 listen_socket.bind((host, port))
 listen_socket.listen(1)
-print("starting server on port: " + str(port))
+print("starting server on "  + str(hostip) + ":" + str(port))
 
 # Load the files into the cache
 with open("client.html") as f:
@@ -36,10 +50,10 @@ with open("fields.json") as f:
     fields = json.load(f)
 if path.exists("saved_responses.json"):
     with open("saved_responses.json") as f:
-        responses = json.load(f)["data"]
+        responses = json.load(f)
 if path.exists("saved_fields.json"):
     with open("saved_fields.json") as f:
-        fields = json.load(f)["data"]
+        fields = json.load(f)
 
 # Save the answers given so far to a file 
 def saveAnswers():
@@ -74,7 +88,12 @@ def getQuestion():
                     newIndex = random.randint(0, len(fields[field])-1)
                     newWord = fields[field][newIndex]
 
-            q = q[:i-len(word)-2] + newWord + q[i+1:]
+            q = q[:i-len(word)-2] + "<span>" + newWord + "</span>" + q[i+1:]
+            q = q.replace("  ", " ")
+            q = q.replace(" :", ":")
+            q = q.replace(" ?", "?")
+            q = q.replace(" ,", ",")
+            i = -1
 
             word = ""
 
@@ -110,9 +129,9 @@ while True:
             elif "/refresh" in line:
                 responseType = "refresh"
             elif "/send" in line:
-                responseType = "send"
                 answer = line[line.find("/send")+5:line.find("HTTP")]
                 answer = answer.replace("%20", " ")
+                answer = answer.strip()
                 ques = questionsPerIP[str(client_address[0])]
                 if ques[0:4] == "Give":
                     field = ""
@@ -124,6 +143,10 @@ while True:
                 else:
                     responses.append({"question": ques, "answer": answer, "laughs":0, "scares":0,"up":0,"down":0})
                 saveAnswers()
+            elif "/answer" in line:
+                responseType = "answer"
+            elif "/info" in line:
+                responseType = "info"
             elif "/ " in line:
                 responseType = "client"
 
@@ -144,6 +167,19 @@ while True:
             response += q
             response = response.encode("utf-8")
             questionsPerIP[str(client_address[0])] = q
+        elif responseType == "answer":
+            response = textResponse
+            #TODO 1 choose best response
+
+            # If any have been shown less than twice, show them
+
+            # Otherwise pick randomly
+
+            response = response.encode("utf-8")
+        elif responseType == "info":
+            response = textResponse
+            response += "visit " + str(hostip) + ":" + str(port) + " to vote and create"
+            response = response.encode("utf-8")
 
         # Send the reply
         client_connection.sendall(response)
