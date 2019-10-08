@@ -30,6 +30,14 @@ def get_ip():
     return IP
 hostip = get_ip()
 
+# Song options DEBUG
+options = []
+options.append({"title": "skip song", "artist": ""})
+options.append({"title": "refresh choices", "artist": ""})
+options.append({"title": "All Star", "artist": "Smash Mouth"})
+options.append({"title": "Mr Brightside", "artist": "The Killers"})
+options.append({"title": "Bohemian Rhapsody", "artist": "Queen"})
+
 # Set up the server
 listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
