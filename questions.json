@@ -1,0 +1,35 @@
+{
+
+	"data": [
+	
+		{"type": "request", "text": "Give the name of someone to be used in a possible question.", "field": "NAME"},
+		{"type": "request", "text": "Give an action (e.g. 'go for a run') to be used in a possible question.", "field": "ACTION"},
+		{"type": "request", "text": "Give a place to be used in a possible question.", "field": "PLACE"},
+
+		{"type": "question", "text": "How should we solve terrorism?"},
+		{"type": "question", "text": "How should we win the war on drugs?"},
+		{"type": "question", "text": "How should we solve immigration?"},
+		{"type": "question", "text": "What's the best movie that exists?"},
+		{"type": "question", "text": "What's the best album that exists?"},
+		{"type": "question", "text": "Something that $(NAME) needs:"},
+		{"type": "question", "text": "The only reason to $(ACTION):"},
+		{"type": "question", "text": "Something you wouldn't find in $(NAME)'s room: "},
+		{"type": "question", "text": "What would the world be like without $(NAME)?"},
+		{"type": "question", "text": "What $(NAME)'s partner must always be thinking:"},
+		{"type": "question", "text": "What $(NAME) must always be thinking:"},
+		{"type": "question", "text": "The dream couple, $(NAME) and:"},
+		{"type": "question", "text": "Well, you know what they say:"},
+		{"type": "question", "text": "As the wise men of $(PLACE) say:"},
+		{"type": "question", "text": "Quick, call an ambulance! $(NAME)'s come down with:"},
+		{"type": "question", "text": "If I were the leader of $(PLACE), I'd:"},
+		{"type": "question", "text": "The only reason $(NAME) would ever be found in $(PLACE):"},
+		{"type": "question", "text": "Something that should be illegal:"},
+		{"type": "question", "text": "Something that should be forced for all citizens:"},
+		{"type": "question", "text": "What would you say if $(NAME) asked you to $(ACTION)?"},
+		{"type": "question", "text": "$(NAME)'s most frequent search term:"},
+		{"type": "question", "text": "$(NAME)'s most frequent search term:"},
+		{"type": "question", "text": "How should we solve brexit?"}
+	
+	]
+
+}

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+
+<style>
+
+	.emoji {
+		
+		padding: 0.5em;
+		font-size: 2em;
+		outline: none;
+		background: none;
+		border: none;
+	
+	}
+
+	#refresh {
+
+		font-size: 2em;
+		outline: none;
+		background: none;
+		border: none;
+		margin-bottom: 0.2em;
+
+	}
+
+	#buttonsDiv {
+
+		margin-bottom: 2em;
+
+	}
+
+	#prompt {
+
+		font-size: 1.1em;
+		margin-bottom: 0.2em;
+
+	}
+
+	#response{
+
+		font-size: 1.1em;
+		padding: 0.5em;
+		border: 1px solid black;
+
+	}
+
+	#mainDiv {
+
+		margin: auto;
+		width: 90%;
+		text-align: center;
+
+	}
+
+	body{width:100%; font-size: 3em;}
+	html{width:100%; font-size: 1em;}
+
+</style>
+
+<script type="text/javascript">
+
+	let prompt;
+	let response;
+	let refresh;
+
+	function init(){
+		prompt = document.getElementById("prompt");
+		response = document.getElementById("response");
+		refresh = document.getElementById("refresh");
+		refreshQ();
+
+		response.addEventListener("keyup", function(event) {
+			if (event.keyCode === 13) {
+				event.preventDefault();
+				submit();
+			}
+		});
+
+	}
+
+	function refreshQ(){
+
+		var xhttp = new XMLHttpRequest();
+		xhttp.onreadystatechange = function() {
+			if (this.status == 200) {
+				prompt.innerHTML = this.responseText;
+			}
+		};
+		xhttp.open("GET", "/refresh", true);
+		xhttp.send();
+
+	}
+
+	function submit(){
+
+		toSend = response.value;
+		var xhttp = new XMLHttpRequest();
+		xhttp.open("GET", "/send" + toSend, true);
+		xhttp.send();
+		response.value = "";
+		refreshQ();
+
+	}
+
+</script>
+
+<body onload="init()">
+
+<div id="mainDiv">
+
+	<div id="voteDiv">
+		<div id="buttonsDiv">
+			<button class="emoji" id="laugh">&#x1F602;</button>
+			<button class="emoji" id="shocked">&#x1F628;</button>
+			<button class="emoji" id="agree">&#x1F44D;</button>
+			<button class="emoji" id="disagree">&#x1F44E;</button>
+		</div>
+		<div id="prompt">What do you think about this game?</div>
+		<button id="refresh" onclick="refreshQ()">&#x21BA;</button><br>
+		<input id="response"></input>
+	</div>
+
+</div>
+
+</body>
+</html>
+
