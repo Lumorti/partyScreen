@@ -14,7 +14,8 @@
 	.choiceActive {
 
 
-		width: 10em;
+		width: 80%;;
+		box-sizing: border-box;
 		height: auto;
 		padding: 1em;
 		margin-bottom: 1em;
@@ -29,7 +30,8 @@
 	.choice {
 
 
-		width: 10em;
+		width: 80%;
+		box-sizing: border-box;
 		height: auto;
 		padding: 1em;
 		padding: 1em;
@@ -41,8 +43,15 @@
 
 	}
 
-	body{width:100%; font-size: 3em;}
-	html{width:100%; font-size: 1em;}
+	#choice1{
+
+		margin-top: 2em;
+
+	}
+
+	body{width:100%; font-size: 3em; overflow-x: hidden;}
+	html{width:100%; font-size: 1em; overflow-x: hidden;}
+
 
 </style>
 
@@ -51,6 +60,8 @@
 	let choiceArray = [];
 	let selected = -1;
 	let songs = [];
+	let voteDiv;
+	let waitDiv;
 
 	function init(){
 
@@ -61,12 +72,15 @@
 		choiceArray.push(document.getElementById("choice4"));
 		choiceArray.push(document.getElementById("choice5"));
 
+		voteDiv = document.getElementById("voteDiv");
+		waitDiv = document.getElementById("waitDiv");
+
 		refreshQ();
 
-		// Refresh every 5 seconds
-		//window.setInterval(function(){
-		//	refreshQ();
-		//}, 5000);
+		// Refresh every so often
+		window.setInterval(function(){
+			refreshQ();
+		}, 2000);
 
 	}
 
@@ -79,9 +93,17 @@
 				data = data.replace(/'/g, '"');
 				data = data.replace(/#x420/g, "'");
 				console.log(data);
-				songs = JSON.parse(data);
-				for (i = 0; i < songs.length; i++){
-					choiceArray[i].innerHTML = getText(i);
+				recieved = JSON.parse(data);
+				songs = recieved["next"];
+				if (recieved["canVote"]) {
+					waitDiv.style.display = "none";
+					voteDiv.style.display = "block";
+					for (i = 0; i < songs.length; i++){
+						choiceArray[i].innerHTML = getText(i);
+					}
+				} else {
+					waitDiv.style.display = "block";
+					voteDiv.style.display = "none";
 				}
 			}
 		};
@@ -106,6 +128,8 @@
 		selected = num-1;
 		choiceArray[selected].className = "choiceActive";
 
+		vote(num);
+
 	}
 
 	function vote(num){
@@ -129,6 +153,10 @@
 		<button class="choice" id="choice3" onclick="toggle(3);"></button>
 		<button class="choice" id="choice4" onclick="toggle(4);"></button>
 		<button class="choice" id="choice5" onclick="toggle(5);"></button>
+	</div>
+
+	<div id="waitDiv">
+		Voting will start when the song is nearly finished
 	</div>
 
 </div>

@@ -3,49 +3,6 @@
 
 <style>
 
-	.emoji {
-		
-		padding: 0.5em;
-		font-size: 2em;
-		outline: none;
-		background: none;
-		border: none;
-		height: 2em;
-		width: 2em;
-	
-	}
-
-	#refresh {
-
-		font-size: 2em;
-		outline: none;
-		background: none;
-		border: none;
-		margin-bottom: 0.2em;
-
-	}
-
-	#buttonsDiv {
-
-		margin-bottom: 2em;
-
-	}
-
-	#prompt {
-
-		font-size: 1.1em;
-		margin-bottom: 0.2em;
-
-	}
-
-	#response{
-
-		font-size: 1.1em;
-		padding: 0.5em;
-		border: 1px solid black;
-
-	}
-
 	#mainDiv {
 
 		margin: auto;
@@ -54,56 +11,88 @@
 
 	}
 
-	span {
-
-		color: #006699;
-
-	}
-
-	.emojiBlock {
-		
-		display: inline-block;
-	
-	}
-
-	#currentAnswer {
-
-		height: 10em;
-
-	}
-
 	#infoBox {
 
-		width: 10em;
-		text-align: left;
+		width: 100%;
+		text-align: right;
+		margin-bottom: 2em;
 
 	}
 
-	body{width:100%; font-size: 3em;}
+	.divBar {
+
+
+		height: 3em;
+		width: 2em;
+		background-color: blue;
+		border: none;
+		display: inline-block;
+		margin-left: 45%;
+
+	}
+
+	.divChoice {
+
+		width: 100%;
+		position: relative;
+		text-align: left;
+		margin-bottom: 1em;
+
+	}
+
+	.divSong {
+
+		width: 40%;
+		display: inline-block;
+		margin: 0;
+		position: absolute;
+		top: 50%;
+		-ms-transform: translateY(-50%);
+		transform: translateY(-50%);
+
+	}
+
+	body{width:100%; font-size: 2em;}
 	html{width:100%; font-size: 1em;}
 
 </style>
 
 <script type="text/javascript">
 
-	let laughNum;
-	let scareNum;
-	let upNum;
-	let downNum;
-	let answer;
 	let infoBox;
+	let voteDiv;
+	let waitDiv;
+	let songArray = [];
+	let barArray = [];
+	let refreshDelay = 1000;
 
 	function init(){
 
 		infoBox = document.getElementById("infoBox");
-		answer = document.getElementById("currentAnswer");
-		laughNum = document.getElementById("laughNum");
-		scareNum = document.getElementById("scareNum");
-		upNum = document.getElementById("upNum");
-		downNum = document.getElementById("downNum");
+		voteDiv = document.getElementById("voteDiv");
+		waitDiv = document.getElementById("waitDiv");
+
+		songArray = [];
+		songArray.push(document.getElementById("divSong1"));
+		songArray.push(document.getElementById("divSong2"));
+		songArray.push(document.getElementById("divSong3"));
+		songArray.push(document.getElementById("divSong4"));
+		songArray.push(document.getElementById("divSong5"));
+
+		barArray = [];
+		barArray.push(document.getElementById("divBar1"));
+		barArray.push(document.getElementById("divBar2"));
+		barArray.push(document.getElementById("divBar3"));
+		barArray.push(document.getElementById("divBar4"));
+		barArray.push(document.getElementById("divBar5"));
 
 		getInfo();
-		getNextAns();
+		refreshQ();
+
+		// Refresh every so often
+		window.setInterval(function(){
+			refreshQ();
+		}, refreshDelay);
 
 	}
 
@@ -122,22 +111,41 @@
 
 	}
 
-	function getNextAns(){
+	function refreshQ(){
 
 		var xhttp = new XMLHttpRequest();
 		xhttp.onreadystatechange = function() {
 			if (this.status == 200) {
-
-				answer.innerHTML = this.responseText;
-				laughNum.innerHTML = 1;
-				scareNum.innerHTML = 1;
-				upNum.innerHTML = 1
-				downNum.innerHTML = 1
-
+				data = this.responseText;
+				data = data.replace(/'/g, '"');
+				data = data.replace(/#x420/g, "'");
+				if (data.length > 1){
+					recieved = JSON.parse(data);
+					songs = recieved["next"];
+					if (recieved["canVote"]) {
+						waitDiv.style.display = "none";
+						voteDiv.style.display = "block";
+						for (i = 0; i < songs.length; i++){
+							songArray[i].innerHTML = getText(i);
+							barArray[i].style.width = (songs[i]["votes"]+1)*2 + "em";
+						}
+					} else {
+						waitDiv.style.display = "block";
+						voteDiv.style.display = "none";
+					}
+				}
 			}
 		};
-		xhttp.open("GET", "/answer", true);
+		xhttp.open("GET", "/refresh", true);
 		xhttp.send();
+
+	}
+
+	function getText(num){
+
+		x = songs[num]["title"];
+		if (songs[num]["artist"] != "") {x += " (" + songs[num]["artist"] + ")";}
+		return x;
 
 	}
 
@@ -148,26 +156,15 @@
 <div id="mainDiv">
 
 	<div id="infoBox"></div>
-	<div id="currentAnswer"></div>
 	<div id="voteDiv">
-		<div id="buttonsDiv">
-			<div class="emojiBlock">
-				<button class="emoji" id="laugh">&#x1F602;</button>
-				<div id="laughNum">0</div>
-			</div>
-			<div class="emojiBlock">
-				<button class="emoji" id="shocked">&#x1F628;</button>
-				<div id="scareNum">0</div>
-			</div>
-			<div class="emojiBlock">
-				<button class="emoji" id="agree">&#x1F44D;</button>
-				<div id="upNum">0</div>
-			</div>
-			<div class="emojiBlock">
-				<button class="emoji" id="disagree">&#x1F44E;</button>
-				<div id="downNum">0</div>
-			</div>
-		</div>
+		<div class="divChoice" id="divChoice1"><div class="divSong" id="divSong1">song name</div><div class="divBar" id="divBar1"></div></div>	
+		<div class="divChoice" id="divChoice2"><div class="divSong" id="divSong2">song name</div><div class="divBar" id="divBar2"></div></div>	
+		<div class="divChoice" id="divChoice3"><div class="divSong" id="divSong3">song name</div><div class="divBar" id="divBar3"></div></div>	
+		<div class="divChoice" id="divChoice4"><div class="divSong" id="divSong4">song name</div><div class="divBar" id="divBar4"></div></div>	
+		<div class="divChoice" id="divChoice5"><div class="divSong" id="divSong5">song name</div><div class="divBar" id="divBar5"></div></div>	
+	</div>
+	<div id="waitDiv">
+		
 	</div>
 
 </div>

@@ -3,10 +3,13 @@
 import socket
 import json
 import random
+import spotipy
+import spotipy.util as util
 from os import path
+from os import environ
 
 # Settings
-host, port = '', 8888
+host, port = '', 80
 okResponse = "HTTP/1.1 200 OK" 
 textResponse = okResponse + "Status: 200 OK\nContent-Type: text/plain\n\n"
 
@@ -14,6 +17,23 @@ textResponse = okResponse + "Status: 200 OK\nContent-Type: text/plain\n\n"
 questions = []
 responses = []
 fields = {}
+
+# Spotipy setup 
+scope = 'user-library-read,user-read-currently-playing'
+environ["SPOTIPY_REDIRECT_URI"] = "http://localhost/callback/"
+with open("secret.txt", "r") as f:
+    username = f.readline().strip()
+    environ["SPOTIPY_CLIENT_ID"] = f.readline().strip()
+    environ["SPOTIPY_CLIENT_SECRET"] = f.readline().strip()
+
+token = util.prompt_for_user_token(username, scope)
+
+if token:
+    sp = spotipy.Spotify(auth=token)
+    print("Spotify authentication successful")
+else:
+    print("Spotify authentication failed")
+
 questionsPerIP = {}
 
 # Get the LAN IP
@@ -31,12 +51,14 @@ def get_ip():
 hostip = get_ip()
 
 # Song options DEBUG
-options = []
-options.append({"title": "All Star", "artist": "Smash Mouth"})
-options.append({"title": "Mr Brightside", "artist": "The Killers"})
-options.append({"title": "Bohemian Rhapsody", "artist": "Queen"})
-options.append({"title": "Don't Stop Me Now", "artist": "Queen"})
-options.append({"title": "Moonage Daydream", "artist": "David Bowie"})
+options = {"canVote": True, "current": "", "next":[]}
+options["next"].append({"title": "All Star", "artist": "Smash Mouth", "votes": 3})
+options["next"].append({"title": "Mr Brightside", "artist": "The Killers", "votes": 0})
+options["next"].append({"title": "Bohemian Rhapsody", "artist": "Queen", "votes": 0})
+options["next"].append({"title": "Don't Stop Me Now", "artist": "Queen", "votes": 0})
+options["next"].append({"title": "Moonage Daydream", "artist": "David Bowie", "votes": 1})
+
+votesPerIP = {}
 
 # Set up the server
 listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -53,18 +75,40 @@ with open("screen.html") as f:
     screenPage = okResponse + f.read()
     screenPage = screenPage.encode("utf-8")
 
-# Spotipy setup TODO 1
-def setupSpot():
-
-    pass
-
-# Get a set of five choices TODO 1
+# Get a set of five choices 
 def getChoices():
 
-    pass
+    current = sp.current_user_playing_track()
+
+    # If the user is playing a playlist
+    if current["context"]["type"] == "playlist":
+
+        # Get the playlist
+        playlistURI = current["context"]["uri"]
+        playlist = sp.user_playlist(username, playlistURI)
+        print("currently playing playlist: " + playlist["name"])
+
+        # Pick 5 random songs from this playlist TODO 1
+
+        # Update the options TODO 1
+
+        return[]
+
+    else:
+        print("not currently playing a playlist")
+        return []
+
+
+
+getChoices()
 
 # Main server loop
 while True:
+
+    # If it's been long enough, see how far through the currently playing song is TODO 1
+
+
+
 
     # Get the request
     client_connection, client_address = listen_socket.accept()
@@ -89,6 +133,23 @@ while True:
                 responseType = "refresh"
             elif "/info" in line:
                 responseType = "info"
+            elif "/send" in line:
+                num = line[line.find("send")+4:line.find("HTTP")]
+                ind = -1
+                try:
+                    ind = int(num)-1
+                except:    
+                    pass
+
+                ipString = str(client_address[0])
+
+                if ind != -1:
+
+                    if ipString in list(votesPerIP.keys()):
+                        options["next"][votesPerIP[ipString]]["votes"] -= 1
+                    votesPerIP[ipString] = ind
+                    options["next"][ind]["votes"] += 1
+
             elif "/ " in line:
                 responseType = "client"
 
@@ -109,7 +170,10 @@ while True:
             response = response.encode("utf-8")
         elif responseType == "info":
             response = textResponse
-            response += "visit " + str(hostip) + ":" + str(port) + " to vote and create"
+            if port == 80:
+                response += "visit " + str(hostip) + "<br> to vote on the next song"
+            else:
+                response += "visit " + str(hostip) + ":" + str(port) + "<br> to vote on the next song"
             response = response.encode("utf-8")
 
         # Send the reply
