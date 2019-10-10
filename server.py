@@ -2,13 +2,14 @@
 
 import socket
 import json
+import time
 import random
 import spotipy
 import spotipy.util as util
 from os import path
 from os import environ
 
-# Settings
+# For the server
 host, port = '', 80
 okResponse = "HTTP/1.1 200 OK" 
 textResponse = okResponse + "Status: 200 OK\nContent-Type: text/plain\n\n"
@@ -19,7 +20,7 @@ responses = []
 fields = {}
 
 # Spotipy setup 
-scope = 'user-library-read,user-read-currently-playing'
+scope = 'user-library-read,user-read-currently-playing,streaming'
 environ["SPOTIPY_REDIRECT_URI"] = "http://localhost/callback/"
 with open("secret.txt", "r") as f:
     username = f.readline().strip()
@@ -50,14 +51,6 @@ def get_ip():
     return IP
 hostip = get_ip()
 
-# Song options DEBUG
-options = {"canVote": True, "current": "", "next":[]}
-options["next"].append({"title": "All Star", "artist": "Smash Mouth", "votes": 3})
-options["next"].append({"title": "Mr Brightside", "artist": "The Killers", "votes": 0})
-options["next"].append({"title": "Bohemian Rhapsody", "artist": "Queen", "votes": 0})
-options["next"].append({"title": "Don't Stop Me Now", "artist": "Queen", "votes": 0})
-options["next"].append({"title": "Moonage Daydream", "artist": "David Bowie", "votes": 1})
-
 votesPerIP = {}
 
 # Set up the server
@@ -75,40 +68,113 @@ with open("screen.html") as f:
     screenPage = okResponse + f.read()
     screenPage = screenPage.encode("utf-8")
 
-# Get a set of five choices 
-def getChoices():
+playlistInfo = []
+
+def loadPlaylist():
 
     current = sp.current_user_playing_track()
+    contextURI = current["context"]["uri"]
 
     # If the user is playing a playlist
     if current["context"]["type"] == "playlist":
 
+        playlistInfo = []
+
         # Get the playlist
-        playlistURI = current["context"]["uri"]
-        playlist = sp.user_playlist(username, playlistURI)
-        print("currently playing playlist: " + playlist["name"])
+        playlist = sp.user_playlist(username, contextURI, fields="name,tracks,next,artists")
+        print("loading playlist: " + playlist["name"])
 
-        # Pick 5 random songs from this playlist TODO 1
+        # Add the tracks to the track list
+        tracks = playlist["tracks"]
+        for track in tracks["items"]:
+            playlistInfo.append({"title": track["track"]["name"], "artist": track["track"]["artists"][0]["name"], "uri": track["track"]["uri"]})
 
-        # Update the options TODO 1
+        # Keep getting them in groups of 100 until the entire playlist is loaded
+        while tracks["next"]:
+            tracks = sp.next(tracks)
+            for track in tracks["items"]:
+                playlistInfo.append({"title": track["track"]["name"], "artist": track["track"]["artists"][0]["name"], "uri": track["track"]["uri"]})
 
-        return[]
+        print("loaded " + str(len(playlistInfo)) + " tracks")
+        return playlistInfo, current, contextURI
 
     else:
         print("not currently playing a playlist")
-        return []
+        return [], current, contextURI
 
+# Get a set of five choices 
+def getChoices(playlistInfo, current):
 
+    num = 5
+    numArray = []
 
-getChoices()
+    # Keep getting unique random numbers until have enough
+    while len(numArray) < num:
+        x = random.randint(0,len(playlistInfo)-1)
+        if x not in numArray:
+            if playlistInfo[x]["title"] != current["item"]["name"]:
+                numArray.append(x)
+
+    # Add the songs to the options list
+    options = {"canVote": True, "current": current, "next":[]}
+    for i in numArray:
+        options["next"].append({"title": playlistInfo[i]["title"], "artist": playlistInfo[i]["artist"], "votes": 0, "uri": playlistInfo[i]["uri"]})
+
+    # Give one song a slight preference
+    options["next"][0]["votes"] = 2
+
+    return options
+
+playlistInfo, current, contextURI = loadPlaylist()
+options = getChoices(playlistInfo, current)
+options["canVote"] = False
+
+timeMilli = int(round(time.time() * 1000))
+oldTime = timeMilli
 
 # Main server loop
 while True:
 
-    # If it's been long enough, see how far through the currently playing song is TODO 1
+    # Get the new time
+    timeMilli = int(round(time.time() * 1000))
 
+    # If it's been long enough, see how far through the currently playing song is 
+    if timeMilli - oldTime > 1000:
 
+        current = sp.current_user_playing_track()
 
+        # See how far through the song we are
+        progress = current["progress_ms"]
+        duration = current["item"]["duration_ms"]
+        remainingSeconds = (duration - progress) / 1000
+
+        # If it's in the final thirty seconds of a song show the votes 
+        if remainingSeconds >= 5 and remainingSeconds < 30 and not options["canVote"]:
+
+            # Get the new choices and start the vote
+            options = getChoices(playlistInfo, current)
+            options["canVote"] = True
+            print("voting started")
+
+        # If it's in the final few seconds, count the votes and play the next song
+        elif remainingSeconds < 5 and options["canVote"]:
+
+            # Stop the voting
+            options["canVote"] = False
+            print("voting ended")
+
+            # Play whichever song had most votes
+            maxVotes = -1
+            for song in options["next"]:
+                if song["votes"] > maxVotes:
+                    nextSongURI = song["uri"]
+                    maxVotes = song["votes"]
+
+            # TODO 1 won't work if restarted after doing this, since its not in a playlist anymore
+            print("playing: " + str(nextSongURI))
+            sp.start_playback(None, None, [nextSongURI])
+
+        oldTime = timeMilli
 
     # Get the request
     client_connection, client_address = listen_socket.accept()
