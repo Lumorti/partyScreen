@@ -9,6 +9,9 @@ import spotipy.util as util
 from os import path
 from os import environ
 
+# Choose a song to always be put as the final option, leave blank for none
+alwaysSong = {"title": "", "artist": "", "votes": 0, "uri": ""}
+
 # For the server
 host, port = '', 80
 okResponse = "HTTP/1.1 200 OK" 
@@ -73,34 +76,42 @@ playlistInfo = []
 def loadPlaylist():
 
     current = sp.current_user_playing_track()
-    contextURI = current["context"]["uri"]
 
     # If the user is playing a playlist
-    if current["context"]["type"] == "playlist":
+    if current["context"] is not None:
 
-        playlistInfo = []
+        if current["context"]["type"] == "playlist":
 
-        # Get the playlist
-        playlist = sp.user_playlist(username, contextURI, fields="name,tracks,next,artists")
-        print("loading playlist: " + playlist["name"])
+            contextURI = current["context"]["uri"]
+            playlistInfo = []
 
-        # Add the tracks to the track list
-        tracks = playlist["tracks"]
-        for track in tracks["items"]:
-            playlistInfo.append({"title": track["track"]["name"], "artist": track["track"]["artists"][0]["name"], "uri": track["track"]["uri"]})
+            # Get the playlist
+            playlist = sp.user_playlist(username, contextURI, fields="name,tracks,next,artists")
+            print("loading playlist: " + playlist["name"])
 
-        # Keep getting them in groups of 100 until the entire playlist is loaded
-        while tracks["next"]:
-            tracks = sp.next(tracks)
+            # Add the tracks to the track list
+            tracks = playlist["tracks"]
             for track in tracks["items"]:
                 playlistInfo.append({"title": track["track"]["name"], "artist": track["track"]["artists"][0]["name"], "uri": track["track"]["uri"]})
 
-        print("loaded " + str(len(playlistInfo)) + " tracks")
-        return playlistInfo, current, contextURI
+            # Keep getting them in groups of 100 until the entire playlist is loaded
+            while tracks["next"]:
+                tracks = sp.next(tracks)
+                for track in tracks["items"]:
+                    playlistInfo.append({"title": track["track"]["name"], "artist": track["track"]["artists"][0]["name"], "uri": track["track"]["uri"]})
+
+            print("loaded " + str(len(playlistInfo)) + " tracks")
+            return playlistInfo, current, contextURI
+
+        else:
+            print("not currently playing a playlist")
+            exit()
+            return [], current, ""
 
     else:
         print("not currently playing a playlist")
-        return [], current, contextURI
+        exit()
+        return [], current, ""
 
 # Get a set of five choices 
 def getChoices(playlistInfo, current):
@@ -117,7 +128,14 @@ def getChoices(playlistInfo, current):
 
     # Add the songs to the options list
     options = {"canVote": True, "current": current, "next":[]}
-    for i in numArray:
+    for i in numArray[:-1]:
+        options["next"].append({"title": playlistInfo[i]["title"], "artist": playlistInfo[i]["artist"], "votes": 0, "uri": playlistInfo[i]["uri"]})
+
+    # If told to always put a certain song as the last option
+    if len(alwaysSong["title"]) > 0:
+        options["next"].append(alwaysSong)
+    else:
+        i = numArray[-1]
         options["next"].append({"title": playlistInfo[i]["title"], "artist": playlistInfo[i]["artist"], "votes": 0, "uri": playlistInfo[i]["uri"]})
 
     # Give one song a slight preference
