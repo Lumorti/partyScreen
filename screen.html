@@ -5,6 +5,7 @@
 
 	#mainDiv {
 
+		color: white;
 		margin: auto;
 		width: 90%;
 		text-align: center;
@@ -13,8 +14,10 @@
 
 	#infoBox {
 
+		color: white;
 		width: 100%;
 		text-align: right;
+		margin-top: 1em;
 		margin-bottom: 2em;
 
 	}
@@ -22,9 +25,10 @@
 	.divBar {
 
 
+		color: white;
 		height: 3em;
 		width: 2em;
-		background-color: blue;
+		background-color: #602080;
 		border: none;
 		display: inline-block;
 		margin-left: 45%;
@@ -33,6 +37,7 @@
 
 	.divChoice {
 
+		color: white;
 		width: 100%;
 		position: relative;
 		text-align: left;
@@ -42,6 +47,7 @@
 
 	.divSong {
 
+		color: white;
 		width: 40%;
 		display: inline-block;
 		margin: 0;
@@ -52,8 +58,8 @@
 
 	}
 
-	body{width:100%; font-size: 2em;}
-	html{width:100%; font-size: 1em;}
+	body{background-color: #202020; box-sizing: border-box; width:100%; overflow: hidden; font-size: 2em;}
+	html{width:100%; font-size: 1em; box-sizing: border-box; overflow: hidden;}
 
 </style>
 
@@ -144,7 +150,10 @@
 	function getText(num){
 
 		x = songs[num]["title"];
-		if (songs[num]["artist"] != "") {x += " (" + songs[num]["artist"] + ")";}
+		x = x.replace(/\(.+?\)/g, "")
+		x = x.replace(/\s-\s.+/g, "")
+		x = x.substring(0, Math.min(x.length, 30))
+		if (songs[num]["artist"] != "") {x += " - " + songs[num]["artist"] + "";}
 		return x;
 
 	}

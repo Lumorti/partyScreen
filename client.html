@@ -47,7 +47,7 @@
 
 	}
 
-	#choice1{margin-top: 2em;}
+	#choice1{margin-top: 1em;}
 
 	body{background-color: #202020; width:100%; font-size: 3em; overflow-x: hidden;}
 	html{width:100%; font-size: 1em; overflow-x: hidden;}
@@ -62,6 +62,7 @@
 	let songs = [];
 	let voteDiv;
 	let waitDiv;
+	let oldCanVote = false;
 
 	function init(){
 
@@ -88,25 +89,45 @@
 
 		var xhttp = new XMLHttpRequest();
 		xhttp.onreadystatechange = function() {
+
 			if (this.status == 200) {
+
 				data = this.responseText;
 				data = data.replace(/'/g, '"');
 				data = data.replace(/#x420/g, "'");
-				console.log(data);
+				if (data.length <= 1) return
 				recieved = JSON.parse(data);
 				songs = recieved["next"];
+
 				if (recieved["canVote"]) {
+
+					if (!oldCanVote){
+
+						oldCanVote = true;
+						console.log("refreshing choices")
+						for (i=0; i<5; i++){choiceArray[i].className = "choice";}
+
+					}
+
 					waitDiv.style.display = "none";
 					voteDiv.style.display = "block";
+
 					for (i = 0; i < songs.length; i++){
 						choiceArray[i].innerHTML = getText(i);
 					}
+
 				} else {
+
 					waitDiv.style.display = "block";
 					voteDiv.style.display = "none";
+					oldCanVote = false;
+
 				}
+
 			}
+
 		};
+
 		xhttp.open("GET", "/refresh", true);
 		xhttp.send();
 
@@ -115,7 +136,10 @@
 	function getText(num){
 
 		x = songs[num]["title"];
-		if (songs[num]["artist"] != "") {x += " (" + songs[num]["artist"] + ")";}
+		x = x.replace(/\(.+?\)/g, "")
+		x = x.replace(/\s-\s.+/g, "")
+		x = x.substring(0, Math.min(x.length, 30))
+		if (songs[num]["artist"] != "") {x += " - " + songs[num]["artist"] + "";}
 		return x;
 
 	}
@@ -137,6 +161,7 @@
 		toSend = num
 		var xhttp = new XMLHttpRequest();
 		xhttp.open("GET", "/send" + toSend, true);
+		if (xhttp.overrideMimeType) xhttp.overrideMimeType("text/plain")
 		xhttp.send();
 
 	}

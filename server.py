@@ -45,10 +45,11 @@ print(possiblePlaylists[0]["uri"])
 # Determine which playlist to use for each option
 playlists = []
 numChoices = 5
+print("Possible playlists:")
+for j in range(len(possiblePlaylists)):
+    print(str(j) + " - " + possiblePlaylists[j]["name"])
 for i in range(numChoices):
     print("Which playlist for option " + str(i+1) + "?")
-    for j in range(len(possiblePlaylists)):
-        print(str(j) + " - " + possiblePlaylists[j]["name"])
     choice = input()
     try:
         choice = int(choice)
@@ -117,13 +118,21 @@ def getChoices(current):
 
     # Add the songs to the options list
     options = {"canVote": True, "current": current, "next":[]}
+    titles = []
     for i in range(numChoices):
-        randomNum = random.randint(0, len(playlists[i]["info"]))
+
+        # If the title is used before, reroll
+        randomNum = random.randint(0, len(playlists[i]["info"])-1)
         song = playlists[i]["info"][randomNum]
+        while song["title"] in titles:
+            randomNum = random.randint(0, len(playlists[i]["info"])-1)
+            song = playlists[i]["info"][randomNum]
+
         options["next"].append({"title": song["title"], "artist": song["artist"], "votes": 0, "uri": song["uri"]})
+        titles.append(song["title"])
 
     # Give one song a slight preference
-    options["next"][random.randint(0, numChoices)]["votes"] = 2
+    options["next"][random.randint(0, numChoices-1)]["votes"] = 1
 
     return options
 
@@ -159,9 +168,18 @@ while True:
         #  Get the current song
         current = sp.current_user_playing_track()
 
-        # See how far through the song we are
-        progress = current["progress_ms"]
-        duration = current["item"]["duration_ms"]
+        if current is not None:
+
+            # See how far through the song we are
+            progress = current["progress_ms"]
+            duration = current["item"]["duration_ms"]
+
+        else:
+
+            # Otherwise give some values so it won't error
+            progress = 0
+            duration = 300
+
         remainingSeconds = (duration - progress) / 1000
 
         # If it's in the final thirty seconds of a song show the votes 
@@ -253,9 +271,9 @@ while True:
         elif responseType == "info":
             response = textResponse
             if port == 80:
-                response += "visit " + str(hostip) + "<br> to vote on the next song"
+                response += "visit " + str(hostip) + " to vote"
             else:
-                response += "visit " + str(hostip) + ":" + str(port) + "<br> to vote on the next song"
+                response += "visit " + str(hostip) + ":" + str(port) + " to vote"
             response = response.encode("utf-8")
 
         # Send the reply
