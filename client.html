@@ -62,7 +62,7 @@
 	let songs = [];
 	let voteDiv;
 	let waitDiv;
-	let oldCanVote = false;
+	let prevConcatTitles = "";
 
 	function init(){
 
@@ -101,13 +101,20 @@
 
 				if (recieved["canVote"]) {
 
-					if (!oldCanVote){
+					let concatTitles = "";
+					for (i = 0; i < recieved["next"].length; i++){
+						concatTitles += recieved["next"][i]["title"]
+					}
+
+					if (concatTitles != prevConcatTitles){
 
 						oldCanVote = true;
 						console.log("refreshing choices")
 						for (i=0; i<5; i++){choiceArray[i].className = "choice";}
 
 					}
+
+					prevConcatTitles = concatTitles
 
 					waitDiv.style.display = "none";
 					voteDiv.style.display = "block";

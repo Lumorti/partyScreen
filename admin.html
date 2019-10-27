@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<style>
+
+	#mainDiv {
+
+		color: white;
+		margin: auto;
+		width: 90%;
+		text-align: center;
+		margin-top: 2em;
+
+	}
+
+	.choiceActive {
+
+		color: white;
+		background-color: #040404;
+		width: 80%;;
+		box-sizing: border-box;
+		height: auto;
+		padding: 1em;
+		margin-bottom: 1em;
+		outline: none;
+		font-size: 1em;
+		border-radius: 0.5em;
+		border: 0.3em solid white;
+
+	}
+
+
+	.choice {
+
+		color: white;
+		background-color: #040404;
+		width: 80%;
+		box-sizing: border-box;
+		height: auto;
+		padding: 1em;
+		padding: 1em;
+		margin-bottom: 1em;
+		outline: none;
+		font-size: 1em;
+		border-radius: 0.5em;
+		border-width: 0.1em;
+
+	}
+
+	#choice1{margin-top: 1em;}
+
+	body{background-color: #202020; width:100%; font-size: 3em; overflow-x: hidden;}
+	html{width:100%; font-size: 1em; overflow-x: hidden;}
+
+
+</style>
+
+<script type="text/javascript">
+
+	let choiceArray = [];
+	let selected = -1;
+	let songs = [];
+	let voteDiv;
+	let password = "";
+
+	function init(){
+
+		choiceArray = [];
+		choiceArray.push(document.getElementById("choice1"));
+		choiceArray.push(document.getElementById("choice2"));
+		choiceArray.push(document.getElementById("choice3"));
+		choiceArray.push(document.getElementById("choice4"));
+		choiceArray.push(document.getElementById("choice5"));
+
+		voteDiv = document.getElementById("voteDiv");
+
+		password = window.prompt("Enter admin password:", "")
+
+	}
+
+	function setting(set, val){
+
+		toSend = password + "," + set + "," + val
+		var xhttp = new XMLHttpRequest();
+		xhttp.open("GET", "/setting" + toSend, true);
+		if (xhttp.overrideMimeType) xhttp.overrideMimeType("text/plain")
+		xhttp.send();
+
+	}
+
+</script>
+
+<body onload="init()">
+
+<div id="mainDiv">
+
+	<div id="voteDiv">
+		<button class="choice" id="choice1" onclick="setting('canVote', true);">enable voting</button>
+		<button class="choice" id="choice2" onclick="setting('skip', true);">end voting</button>
+		<button class="choice" id="choice3" onclick="setting('video', true);">enable video</button>
+		<button class="choice" id="choice4" onclick="setting('video', false);">disable video</button>
+	</div>
+
+</div>
+
+</body>
+</html>
+

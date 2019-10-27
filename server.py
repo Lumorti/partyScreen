@@ -26,6 +26,9 @@ with open("secret.txt", "r") as f:
     username = f.readline().strip()
     environ["SPOTIPY_CLIENT_ID"] = f.readline().strip()
     environ["SPOTIPY_CLIENT_SECRET"] = f.readline().strip()
+    youtubeAPI = f.readline().strip()
+    youtubeClient = f.readline().strip()
+    youtubeSecret = f.readline().strip()
 
 token = util.prompt_for_user_token(username, scope)
 
@@ -89,6 +92,9 @@ with open("client.html") as f:
 with open("screen.html") as f:
     screenPage = okResponse + f.read()
     screenPage = screenPage.encode("utf-8")
+with open("admin.html") as f:
+    adminPage = okResponse + f.read()
+    adminPage = adminPage.encode("utf-8")
 
 # Load a playlist from a URI
 def loadPlaylist(uri):
@@ -146,6 +152,10 @@ current = sp.current_user_playing_track()
 # Get the initial choices
 options = getChoices(current)
 options["canVote"] = False
+options["video"] = False
+options["api"] = youtubeAPI
+options["client"] = youtubeClient
+options["secret"] = youtubeSecret
 
 # Setup the initial time
 timeMilli = int(round(time.time() * 1000))
@@ -155,6 +165,10 @@ oldTime = timeMilli
 timeForNewSong = 3
 timeForVoting = 30
 updateMilli = 1000
+
+correct = "pizzatime"
+
+prevTitleArtist = ""
 
 # Main server loop
 while True:
@@ -186,7 +200,8 @@ while True:
         if remainingSeconds >= timeForNewSong and remainingSeconds < timeForVoting and not options["canVote"]:
 
             # Get the new choices and start the vote
-            options = getChoices(current)
+            votesPerIP = {}
+            options["next"] = getChoices(current)["next"]
             options["canVote"] = True
             print("voting started")
 
@@ -204,7 +219,6 @@ while True:
                     nextSongURI = song["uri"]
                     maxVotes = song["votes"]
 
-            # TODO 1 won't work if restarted after doing this, since its not in a playlist anymore
             print("playing: " + str(nextSongURI))
             sp.start_playback(None, None, [nextSongURI])
 
@@ -213,14 +227,6 @@ while True:
     # Get the request
     client_connection, client_address = listen_socket.accept()
     request = client_connection.recv(1024).decode("utf-8")
-
-    # DEBUG reload each request
-    with open("client.html") as f:
-        clientPage = "HTTP/1.1 200 OK" + f.read()
-        clientPage = clientPage.encode("utf-8")
-    with open("screen.html") as f:
-        screenPage = "HTTP/1.1 200 OK" + f.read()
-        screenPage = screenPage.encode("utf-8")
 
     # Parse the response
     responseType = ""
@@ -233,7 +239,9 @@ while True:
                 responseType = "refresh"
             elif "/info" in line:
                 responseType = "info"
+
             elif "/send" in line:
+
                 num = line[line.find("send")+4:line.find("HTTP")]
                 ind = -1
                 try:
@@ -250,6 +258,47 @@ while True:
                     votesPerIP[ipString] = ind
                     options["next"][ind]["votes"] += 1
 
+            elif "/setting" in line:
+
+                split = line[line.find("setting")+7:line.find("HTTP")].split(",")
+                password = split[0].strip()
+                name = split[1].strip()
+                value = split[2].strip()
+
+                if value == "true": value = True
+                elif value == "false": value = False
+
+                if (password == correct):
+
+                    options[name] = value
+                    print("changing option: " + name + " to " + str(value))
+
+                    if (name == "canVote" and value):
+
+                        print("refreshing options")
+
+                        votesPerIP = {}
+                        options["next"] = getChoices(current)["next"]
+                        options["canVote"] = True
+
+                    elif name == "skip" and value and options["canVote"]:
+
+                        print("voting force stopped")
+
+                        options["canVote"] = False
+
+                        # Play whichever song had most votes
+                        maxVotes = -1
+                        for song in options["next"]:
+                            if song["votes"] > maxVotes:
+                                nextSongURI = song["uri"]
+                                maxVotes = song["votes"]
+
+                        print("playing: " + str(nextSongURI))
+                        sp.start_playback(None, None, [nextSongURI])
+
+            if "/admin" in line:
+                responseType = "admin"
             elif "/ " in line:
                 responseType = "client"
 
@@ -258,9 +307,23 @@ while True:
     # If reply is required
     if responseType != "":
 
+        # Load the files into the cache DEBUG
+        with open("client.html") as f:
+            clientPage = okResponse + f.read()
+            clientPage = clientPage.encode("utf-8")
+        with open("screen.html") as f:
+            screenPage = okResponse + f.read()
+            screenPage = screenPage.encode("utf-8")
+        with open("admin.html") as f:
+            adminPage = okResponse + f.read()
+            adminPage = adminPage.encode("utf-8")
+
         if responseType == "screen":
             print("screen connection from: " + str(client_address))
             response = screenPage
+        elif responseType == "admin":
+            print("admin connection from: " + str(client_address))
+            response = adminPage
         elif responseType == "client":
             print("client connection from: " + str(client_address))
             response = clientPage
@@ -279,3 +342,7 @@ while True:
         # Send the reply
         client_connection.sendall(response)
         client_connection.close()
+
+
+
+

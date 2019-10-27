@@ -63,6 +63,8 @@
 
 </style>
 
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://apis.google.com/js/client.js?onload=onClientLoad"></script>
 <script type="text/javascript">
 
 	let infoBox;
@@ -71,6 +73,8 @@
 	let songArray = [];
 	let barArray = [];
 	let refreshDelay = 1000;
+	let prevTitleArtist = "";
+	let hasInit = false;	
 
 	function init(){
 
@@ -121,40 +125,55 @@
 
 		var xhttp = new XMLHttpRequest();
 		xhttp.onreadystatechange = function() {
+
 			if (this.status == 200) {
+
 				data = this.responseText;
 				data = data.replace(/'/g, '"');
 				data = data.replace(/#x420/g, "'");
+
 				if (data.length > 1){
+
 					recieved = JSON.parse(data);
 					songs = recieved["next"];
+					youtubeAPI = recieved["api"];
+					youtubeClient = recieved["client"];
+					youtubeSecret = recieved["secret"];
+
+					if (!hasInit) {
+
+						hasInit = true;
+						console.log("starting youtube API");
+						gapi.client.load('youtube', 'v3', onYouTubeApiLoad);
+
+					}
+
 					if (recieved["canVote"]) {
+
 						waitDiv.style.display = "none";
 						voteDiv.style.display = "block";
 						for (i = 0; i < songs.length; i++){
+
 							songArray[i].innerHTML = getText(i);
 							barArray[i].style.width = (songs[i]["votes"]+1)*2 + "em";
+
 						}
+
 					} else {
+
 						waitDiv.style.display = "block";
 						voteDiv.style.display = "none";
+
 					}
+
 				}
+
 			}
+
 		};
+
 		xhttp.open("GET", "/refresh", true);
 		xhttp.send();
-
-	}
-
-	function getText(num){
-
-		x = songs[num]["title"];
-		x = x.replace(/\(.+?\)/g, "")
-		x = x.replace(/\s-\s.+/g, "")
-		x = x.substring(0, Math.min(x.length, 30))
-		if (songs[num]["artist"] != "") {x += " - " + songs[num]["artist"] + "";}
-		return x;
 
 	}
 
@@ -173,7 +192,6 @@
 		<div class="divChoice" id="divChoice5"><div class="divSong" id="divSong5">song name</div><div class="divBar" id="divBar5"></div></div>	
 	</div>
 	<div id="waitDiv">
-		
 	</div>
 
 </div>
