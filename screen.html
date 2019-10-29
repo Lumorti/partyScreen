@@ -119,6 +119,17 @@
 
 	}
 
+	function getText(num){
+
+		x = songs[num]["title"];
+		x = x.replace(/\(.+?\)/g, "")
+		x = x.replace(/\s-\s.+/g, "")
+		x = x.substring(0, Math.min(x.length, 30))
+		if (songs[num]["artist"] != "") {x += " - " + songs[num]["artist"] + "";}
+		return x;
+
+	}
+
 	function refreshQ(){
 
 		var xhttp = new XMLHttpRequest();

@@ -29,6 +29,7 @@ with open("secret.txt", "r") as f:
     youtubeAPI = f.readline().strip()
     youtubeClient = f.readline().strip()
     youtubeSecret = f.readline().strip()
+    device_id = f.readline().strip()
 
 token = util.prompt_for_user_token(username, scope)
 
@@ -162,9 +163,10 @@ timeMilli = int(round(time.time() * 1000))
 oldTime = timeMilli
 
 # Timings
-timeForNewSong = 3
-timeForVoting = 30
+timeForNewSong = 5
+timeForVoting = 45
 updateMilli = 1000
+refreshMilli = 10000
 
 correct = "pizzatime"
 
@@ -175,6 +177,10 @@ while True:
 
     # Get the new time
     timeMilli = int(round(time.time() * 1000))
+
+    # Every so often, refresh the token
+    if timeMill - oldTime > refreshMilli:
+        token = util.prompt_for_user_token(username, scope)
 
     # If it's been long enough, see how far through the currently playing song is 
     if timeMilli - oldTime > updateMilli:
@@ -220,7 +226,10 @@ while True:
                     maxVotes = song["votes"]
 
             print("playing: " + str(nextSongURI))
-            sp.start_playback(None, None, [nextSongURI])
+            try:
+                sp.start_playback(device_id, None, [nextSongURI])
+            except:
+                pass
 
         oldTime = timeMilli
 
@@ -295,7 +304,10 @@ while True:
                                 maxVotes = song["votes"]
 
                         print("playing: " + str(nextSongURI))
-                        sp.start_playback(None, None, [nextSongURI])
+                        try:
+                            sp.start_playback(device_id, None, [nextSongURI])
+                        except:
+                            pass
 
             if "/admin" in line:
                 responseType = "admin"
@@ -306,17 +318,6 @@ while True:
 
     # If reply is required
     if responseType != "":
-
-        # Load the files into the cache DEBUG
-        with open("client.html") as f:
-            clientPage = okResponse + f.read()
-            clientPage = clientPage.encode("utf-8")
-        with open("screen.html") as f:
-            screenPage = okResponse + f.read()
-            screenPage = screenPage.encode("utf-8")
-        with open("admin.html") as f:
-            adminPage = okResponse + f.read()
-            adminPage = adminPage.encode("utf-8")
 
         if responseType == "screen":
             print("screen connection from: " + str(client_address))
