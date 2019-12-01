@@ -1,7 +1,0 @@
-{
-
-	"NAME": ["Donald Trump", "Boris Johnson", "The Queen", "Obama", "Jeremy Corbyn"],
-	"ACTION": ["have sex", "jump off a bridge", "Netflix and chill", "get down on your knees"],
-	"PLACE": ["the USA", "China", "Russia", "North Korea", "Japan", "$(NAME)'s bedroom"]
-
-}
