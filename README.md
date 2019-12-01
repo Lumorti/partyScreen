@@ -12,10 +12,12 @@ Ever hosted a party and had people complain about the music? Well if you use thi
 
 ### Screenshots
 
-The voting screen people see on their phones. This automatically refreshes whenever there are new song choices.
+The voting screen people see on their phones. This automatically refreshes whenever there are new song choices:
+
 ![screenshot of voting screen](https://raw.githubusercontent.com/Lumorti/partyScreen/master/voting.png)
 
-The screen that should be put up on the TV showing the current voting progress.
+The screen that should be put up on the TV showing the current voting progress:
+
 ![screenshot of votes screen](https://raw.githubusercontent.com/Lumorti/partyScreen/master/screen.png)
 
 ### Setup
