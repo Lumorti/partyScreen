@@ -12,9 +12,11 @@ Ever hosted a party and had people complain about the music? Well if you use thi
 
 ### Setup
 
-You'll need to create a Spotify App to get a client secret and client ID.
+This depends on the latest version of Spotipy, a Python library, available [here](https://github.com/plamere/spotipy).
 
-Then you need to create the "secret.txt" file, which contains (each on their own line):
+You'll need to create a Spotify App [here](https://developer.spotify.com/dashboard/login) to get a client secret and client ID.
+
+Then you need to create the "secret.txt" file, which contains the following, each on their own line:
  - your spotify username
  - your spotify client id
  - your spotify client secret
@@ -25,9 +27,11 @@ Place this file in this directory, then start the server using:
 sudo ./server.py
 ```
 
-You'll then be prompted to authorise the script to access your playlists, then getting to choose which playlist is used for each song option. 
+You'll then be prompted to authorise the script to access your playlists, then prompted to choose which playlist is used for each song option. 
 
-After this the server should be running, connect to the IP (or use localhost if on the same machine) to view the voting. To view the screen visit /screen, to view the admin page visist /admin (which will ask for the admin password specified in the source file)
+After this the server should be running, connect to the IP (or use localhost if on the same machine) to view the voting. 
+
+To view the screen visit IP/screen, to view the admin page visit IP/admin.
 
 ### Screenshots
 
