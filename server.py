@@ -9,6 +9,9 @@ import spotipy.util as util
 from os import path
 from os import environ
 
+# Admin password
+correct = "pizzatime"
+
 # For the server
 host, port = '', 80
 okResponse = "HTTP/1.1 200 OK" 
@@ -26,9 +29,6 @@ with open("secret.txt", "r") as f:
     username = f.readline().strip()
     environ["SPOTIPY_CLIENT_ID"] = f.readline().strip()
     environ["SPOTIPY_CLIENT_SECRET"] = f.readline().strip()
-    youtubeAPI = f.readline().strip()
-    youtubeClient = f.readline().strip()
-    youtubeSecret = f.readline().strip()
     device_id = f.readline().strip()
 
 token = util.prompt_for_user_token(username, scope)
@@ -159,9 +159,6 @@ current = sp.current_user_playing_track()
 options = getChoices(current)
 options["canVote"] = False
 options["video"] = False
-options["api"] = youtubeAPI
-options["client"] = youtubeClient
-options["secret"] = youtubeSecret
 
 # Setup the initial time
 timeMilli = int(round(time.time() * 1000))
@@ -174,8 +171,6 @@ timeForNewSong = 4
 timeForVoting = 7000
 updateMilli = 500
 refreshMilli = 60000
-
-correct = "pizzatime"
 
 prevTitleArtist = ""
 
@@ -252,126 +247,126 @@ while True:
 
     # Get the request
     try:
+
         client_connection, client_address = listen_socket.accept()
+
         if client_connection and client_address:
+
             client_connection.settimeout(2)
             request = client_connection.recv(1024).decode("utf-8")
-        else:
-            print("failed to connect to peer")
+
+            # Parse the response
+            responseType = ""
+            split = request.split("\n")
+            for line in split:
+                if "GET" in line:
+                    if "/screen" in line:
+                        responseType = "screen"
+                    elif "/refresh" in line:
+                        responseType = "refresh"
+                    elif "/info" in line:
+                        responseType = "info"
+
+                    elif "/send" in line:
+
+                        num = line[line.find("send")+4:line.find("HTTP")]
+                        ind = -1
+                        try:
+                            ind = int(num)-1
+                        except:    
+                            pass
+
+                        ipString = str(client_address[0])
+
+                        if ind != -1:
+
+                            if ipString in list(votesPerIP.keys()):
+                                options["next"][votesPerIP[ipString]]["votes"] -= 1
+                            votesPerIP[ipString] = ind
+                            options["next"][ind]["votes"] += 1
+
+                    elif "/setting" in line:
+
+                        split = line[line.find("setting")+7:line.find("HTTP")].split(",")
+                        password = split[0].strip()
+                        name = split[1].strip()
+                        value = split[2].strip()
+
+                        if value == "true": value = True
+                        elif value == "false": value = False
+
+                        if (password == correct):
+
+                            options[name] = value
+                            print("changing option: " + name + " to " + str(value))
+
+                            if (name == "canVote" and value):
+
+                                print("refreshing options")
+
+                                votesPerIP = {}
+                                options["next"] = getChoices(current)["next"]
+                                options["canVote"] = True
+
+                            elif name == "skip" and value and options["canVote"]:
+
+                                print("voting force stopped")
+
+                                options["canVote"] = False
+
+                                # Play whichever song had most votes
+                                maxVotes = -1
+                                for song in options["next"]:
+                                    if song["votes"] > maxVotes:
+                                        nextSongURI = song["uri"]
+                                        maxVotes = song["votes"]
+
+                                print("playing: " + str(nextSongURI))
+                                try:
+                                    sp.start_playback(device_id, None, [nextSongURI])
+                                except:
+                                    pass
+
+                    if "/admin" in line:
+                        responseType = "admin"
+                    elif "/ " in line:
+                        responseType = "client"
+
+                    break
+
+            # If reply is required
+            if responseType != "":
+
+                if responseType == "screen":
+                    print("screen connection from: " + str(client_address))
+                    response = screenPage
+                elif responseType == "admin":
+                    print("admin connection from: " + str(client_address))
+                    response = adminPage
+                elif responseType == "client":
+                    print("client connection from: " + str(client_address))
+                    response = clientPage
+                elif responseType == "refresh":
+                    response = textResponse
+                    response += json.dumps(options).replace("'", "#x420")
+                    response = response.encode("utf-8")
+                elif responseType == "info":
+                    response = textResponse
+                    if port == 80:
+                        response += "connect to our wifi and visit " + str(hostip) + " to vote"
+                    else:
+                        response += "connect to our wifi and visit " + str(hostip) + ":" + str(port) + " to vote"
+                    response = response.encode("utf-8")
+
+                # Send the reply
+                try:
+                    client_connection.sendall(response)
+                    client_connection.close()
+                except:
+                    print("failed to send response")
+
     except:
         print("failed to connect to peer")
-
-    if client_connection:
-
-        # Parse the response
-        responseType = ""
-        split = request.split("\n")
-        for line in split:
-            if "GET" in line:
-                if "/screen" in line:
-                    responseType = "screen"
-                elif "/refresh" in line:
-                    responseType = "refresh"
-                elif "/info" in line:
-                    responseType = "info"
-
-                elif "/send" in line:
-
-                    num = line[line.find("send")+4:line.find("HTTP")]
-                    ind = -1
-                    try:
-                        ind = int(num)-1
-                    except:    
-                        pass
-
-                    ipString = str(client_address[0])
-
-                    if ind != -1:
-
-                        if ipString in list(votesPerIP.keys()):
-                            options["next"][votesPerIP[ipString]]["votes"] -= 1
-                        votesPerIP[ipString] = ind
-                        options["next"][ind]["votes"] += 1
-
-                elif "/setting" in line:
-
-                    split = line[line.find("setting")+7:line.find("HTTP")].split(",")
-                    password = split[0].strip()
-                    name = split[1].strip()
-                    value = split[2].strip()
-
-                    if value == "true": value = True
-                    elif value == "false": value = False
-
-                    if (password == correct):
-
-                        options[name] = value
-                        print("changing option: " + name + " to " + str(value))
-
-                        if (name == "canVote" and value):
-
-                            print("refreshing options")
-
-                            votesPerIP = {}
-                            options["next"] = getChoices(current)["next"]
-                            options["canVote"] = True
-
-                        elif name == "skip" and value and options["canVote"]:
-
-                            print("voting force stopped")
-
-                            options["canVote"] = False
-
-                            # Play whichever song had most votes
-                            maxVotes = -1
-                            for song in options["next"]:
-                                if song["votes"] > maxVotes:
-                                    nextSongURI = song["uri"]
-                                    maxVotes = song["votes"]
-
-                            print("playing: " + str(nextSongURI))
-                            try:
-                                sp.start_playback(device_id, None, [nextSongURI])
-                            except:
-                                pass
-
-                if "/admin" in line:
-                    responseType = "admin"
-                elif "/ " in line:
-                    responseType = "client"
-
-                break
-
-        # If reply is required
-        if responseType != "":
-
-            if responseType == "screen":
-                print("screen connection from: " + str(client_address))
-                response = screenPage
-            elif responseType == "admin":
-                print("admin connection from: " + str(client_address))
-                response = adminPage
-            elif responseType == "client":
-                print("client connection from: " + str(client_address))
-                response = clientPage
-            elif responseType == "refresh":
-                response = textResponse
-                response += json.dumps(options).replace("'", "#x420")
-                response = response.encode("utf-8")
-            elif responseType == "info":
-                response = textResponse
-                if port == 80:
-                    response += "connect to our wifi and visit " + str(hostip) + " to vote"
-                else:
-                    response += "connect to our wifi and visit " + str(hostip) + ":" + str(port) + " to vote"
-                response = response.encode("utf-8")
-
-            # Send the reply
-            try:
-                client_connection.sendall(response)
-                client_connection.close()
-            except:
-                print("failed to send response")
 
 
 
